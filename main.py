@@ -1,3 +1,7 @@
+main.py  : 
+# FeedBack analyser
+
+
 # import
 import streamlit as st
 import time
@@ -27,7 +31,7 @@ st.title(":red[Zomato|]Feeds :pizza:")
 st.markdown('''
             <style>  
                 .stApp {
-                    background-color: white;
+                    background-color: ivory;
                     color: #2e7d32;
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 }
@@ -100,7 +104,7 @@ if 'p' not in st.session_state:
 def analyse(t):
     t = t.lower()
     p_words = ["delicious", "good", "wonderful", "happy", "best", "tasty", "love"]
-    n_words = ["bad", "worst", "bitter", "salty", "regret", "slow", "cold"]
+    n_words = ["bad", "worst", "bitter", "salty", "regret", "slow", "cold", "disappointing"]
     p = sum(t.count(w) for w in p_words)
     n = sum(t.count(w) for w in n_words)
     if p > n: return "Positive☺️", "#2E7D32"
@@ -182,3 +186,30 @@ if option == "Feedback":
 # Step -4: Analytics Section
 elif option == "Analytics":
     st.subheader("Performance Insights")
+    if not st.session_state.db:
+        st.info("No reviews submitted yet. Please share your feedback in the Feedback section.")
+    else:
+        df = pd.DataFrame(st.session_state.db)
+        c1, c2 = st.columns(2)
+        with c1:
+            fig1 = px.histogram(df, x="prod", color="sent", title="Sentiment Distribution by Item",
+                                category_orders={"sent": ["Positive☺️", "Neutral🫠", "Negative🥲"]})
+            st.plotly_chart(fig1, use_container_width=True)
+        with c2:
+            fig1 = px.area(df.groupby("prod")["rating"].mean().reset_index(), x="prod", y="rating", title="Average Rating by Item")
+            st.plotly_chart(fig1, use_container_width=True)
+
+
+        df = df.sort_values("time", ascending=True)
+        st.subheader("| Recent Reviews")
+        for _, row in df.iterrows():
+            st.markdown(f'''
+                <div class="review-box" style="border-color: {row['color']}20; background-color: {row['color']}20;">
+                    <small><b>{row['email']}</b> <br> ({row['sent']})</small>
+                    <small>{"⭐" * row['rating']}</small> <br>                  
+                    <b><i>"{row['txt']}"</i></b>
+                    <div style="text-align: right; font-size: 10px; color: #777;">{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(row['time']))}</div>
+                </div>
+            ''', unsafe_allow_html=True)
+
+
